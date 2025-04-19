@@ -38,8 +38,6 @@ function AccessData() {
       year: "numeric",
       month: "short",
       day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   }
 
@@ -73,7 +71,7 @@ function AccessData() {
               key={newsItem.id}
               style={{
                 border: "1px solid #ccc",
-                borderRadius: 9,
+                borderRadius: 8,
                 padding: "1rem",
                 marginBottom: "1rem",
                 boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
