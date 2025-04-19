@@ -13,7 +13,7 @@ function ApiKeyGenerator() {
     setApiKey('');
 
     try {
-        const response = await fetch("/generate-key", {
+        const response = await fetch("http://localhost:3000/generate-key", {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json' },
