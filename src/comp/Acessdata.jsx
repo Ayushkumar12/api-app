@@ -37,7 +37,7 @@ function AccessData() {
     return date.toLocaleDateString(undefined, {
       year: "numeric",
       month: "short",
-      day: "numeric",
+      day: "numeric"
     });
   }
 

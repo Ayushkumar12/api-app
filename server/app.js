@@ -1,6 +1,5 @@
 import cors from 'cors';
 import express from 'express';
-import { db } from './firebasecofig.js';
 import { generateApiKey, validateApiKey, revokeApiKey } from './apiKeyService.js';
 
 const app = express();
@@ -61,20 +60,12 @@ async function validateApiKeyMiddleware(req, res, next) {
 // Protected route example
 app.get('/protected-data', validateApiKeyMiddleware, async (req, res) => {
   try {
-    const newsSnapshot = await db.collection('news')
-      .orderBy('publishedAt', 'desc')
-      .limit(20)
-      .get();
-
-    const latestNews = newsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-
-    res.json({ data: latestNews, user: req.userName });
+    const snapshot = await db.collection('news').get();
+    const news = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    res.json({ data: news });
   } catch (err) {
-    console.error('Error fetching news from Firestore:', err);
-    res.status(500).json({ error: 'Failed to fetch news data' });
+    console.error('Error fetching news:', err);
+    res.status(500).json({ error: 'Failed to fetch news' });
   }
 });
 
