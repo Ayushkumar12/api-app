@@ -61,7 +61,7 @@ function AccessData() {
         {loading ? "Loading..." : "Get Protected Data"}
       </button>
 
-      {error && <p style={{ color: "red", marginTop: "1rem" }}>Error: {error}</p>}
+      {error && <p style={{ color: "black", marginTop: "1rem" }}>Error: {error}</p>}
 
       {data && data.data && data.data.length > 0 ? (
         <div style={{ marginTop: "2rem" }}>
