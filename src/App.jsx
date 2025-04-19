@@ -1,14 +1,15 @@
 import { useState } from "react";
 import ApiKeyGenerator from "./comp/ApiKeyGenerator";
+import Acessdata from "./comp/Acessdata";
+import AddNews from "./comp/AddNews";
 
 function App() {
   
 
   return (
     <div>
-      <button onClick={fetchProtectedData}>Get Protected Data</button>
-      {data && <pre>{JSON.stringify(data, null, 2)}</pre>}
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <AddNews/>
+      <Acessdata/>
       <ApiKeyGenerator/>
     </div>
   );

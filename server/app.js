@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { db } from './firebaseconfig.js';
+import { db } from './firebasecofig.js';
 import { generateApiKey, validateApiKey, revokeApiKey } from './apiKeyService.js';
 
 const app = express();
@@ -20,6 +20,22 @@ app.post('/generate-key', async (req, res) => {
   } catch (err) {
     console.error('Error in /generate-key:', err.stack || err);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.post('/news', async (req, res) => {
+  try {
+    const newsData = {
+      ...req.body,
+      publishedAt: req.body.publishedAt ? new Date(req.body.publishedAt) : new Date(),
+    };
+
+    const docRef = await db.collection('news').add(newsData);
+
+    res.status(201).json({ message: 'News added successfully', id: docRef.id });
+  } catch (err) {
+    console.error('Error saving news:', err);
+    res.status(500).json({ error: 'Failed to add news' });
   }
 });
 
