@@ -66,7 +66,11 @@ app.delete('/revoke-key', async (req, res) => {
 });
 
 // Start server
-const PORT = 8080 || 5173;
+const PORT = 8080;
+const PORT1 = 5173;
 app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+app.listen(PORT1, () => {
   console.log(`Server running on port ${PORT}`);
 });
