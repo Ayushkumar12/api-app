@@ -1,29 +1,37 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 function AccessData() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState("e7a7d3fd-9e9c-405e-95c9-71e793d2aa0f"); // Replace with your API key
+  const apiKey = "e7a7d3fd-9e9c-405e-95c9-71e793d2aa0f";
 
   async function fetchProtectedData() {
     setLoading(true);
     setError(null);
-    setData(null);
-
+    
     try {
-      const response = await fetch("http://localhost:3000/protected-data", {
-        headers: {
-          "x-api-key": apiKey,
-        },
+      const response = await fetch('http://localhost:3000/protected-data', {
+        method: 'GET',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey 
+        }
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Request failed');
       }
 
-      const json = await response.json();
-      setData(json);
+      const result = await response.json();
+      setData({
+        userName: result.user,
+        news: Object.entries(result.news || {}).map(([id, article]) => ({
+          id,
+          ...article
+        }))
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,72 +39,82 @@ function AccessData() {
     }
   }
 
-  // Helper to format date string nicely
   function formatDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
+    if (!dateString) return 'No date available';
+    
+    const options = { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: "auto", padding: "1rem" }}>
-      <h2>Fetch Protected News Data</h2>
-
-      <div style={{ marginBottom: "1rem" }}>
-        <label>
-          API Key:{" "}
-          <input
-            type="text"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            style={{ width: "100%" }}
-          />
-        </label>
-      </div>
-
-      <button onClick={fetchProtectedData} disabled={loading} style={{ padding: "0.5rem 1rem" }}>
-        {loading ? "Loading..." : "Get Protected Data"}
+    <div style={{ maxWidth: 800, margin: 'auto', padding: 20 }}>
+      <h2>News Dashboard</h2>
+      <button 
+        onClick={fetchProtectedData} 
+        disabled={loading || !apiKey}
+        style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none' }}
+      >
+        {loading ? 'Loading...' : 'Fetch News'}
       </button>
 
-      {error && <p style={{ color: "black", marginTop: "1rem" }}>Error: {error}</p>}
+      {error && <p style={{ color: 'red', marginTop: 15 }}>Error: {error}</p>}
 
-      {data && data.data && data.data.length > 0 ? (
-        <div style={{ marginTop: "2rem" }}>
-          <h3>Latest News</h3>
-          {data.data.map((newsItem) => (
-            <div
-              key={newsItem.id}
-              style={{
-                border: "1px solid #ccc",
-                borderRadius: 8,
-                padding: "1rem",
-                marginBottom: "1rem",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-              }}
-            >
-              <h4 style={{ margin: "0 0 0.5rem 0" }}>{newsItem.title || "Untitled"}</h4>
-              <p style={{ margin: "0 0 0.5rem 0", fontStyle: "italic", color: "#555" }}>
-                By {newsItem.author?.name || newsItem.author || "Unknown Author"} |{" "}
-                {newsItem.publishedAt ? formatDate(newsItem.publishedAt) : "Unknown Date"}
-              </p>
-              <p style={{ whiteSpace: "pre-wrap" }}>{newsItem.content || "No content available."}</p>
-              {newsItem.sourceUrl && (
-                <p>
-                  Source:{" "}
-                  <a href={newsItem.sourceUrl} target="_blank" rel="noopener noreferrer">
-                    {newsItem.sourceUrl}
-                  </a>
+      {data && (
+        <div style={{ marginTop: 30 }}>
+          <h3>Welcome, {data.userName || 'User'}</h3>
+          
+          {data.news.length === 0 ? (
+            <p>No articles found</p>
+          ) : (
+            data.news.map(article => (
+              <article key={article.id} style={{ 
+                marginBottom: 20, 
+                padding: 20, 
+                border: '1px solid #ddd',
+                borderRadius: 8
+              }}>
+                <h4>{article.title || 'Untitled Article'}</h4>
+                <p style={{ color: '#666' }}>
+                  By {article.author?.name || 'Unknown'} • {formatDate(article.publishedAt)}
                 </p>
-              )}
-            </div>
-          ))}
+                <p style={{ margin: '15px 0' }}>{article.content || 'No content available'}</p>
+                {article.tags?.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    {article.tags.map(tag => (
+                      <span key={tag} style={{ 
+                        display: 'inline-block',
+                        background: '#eee',
+                        padding: '3px 8px',
+                        marginRight: 8,
+                        borderRadius: 4,
+                        fontSize: 14
+                      }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {article.sourceUrl && (
+                  <a 
+                    href={article.sourceUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{ color: '#007bff', display: 'inline-block', marginTop: 10 }}
+                  >
+                    View Source
+                  </a>
+                )}
+              </article>
+            ))
+          )}
         </div>
-      ) : data && data.data && data.data.length === 0 ? (
-        <p style={{ marginTop: "1rem" }}>No news available.</p>
-      ) : null}
+      )}
     </div>
   );
 }

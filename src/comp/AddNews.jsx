@@ -1,81 +1,177 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { useState } from 'react';
+import { getDatabase, ref, push, set } from "firebase/database";
+import { initializeApp } from "firebase/app";
+
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyBABanc9qyPW098eqGNAm0YsKW9aA9e0Z0",
+  authDomain: "ayush-d1675.firebaseapp.com",
+  databaseURL: "https://ayush-d1675-default-rtdb.firebaseio.com",
+  projectId: "ayush-d1675",
+  storageBucket: "ayush-d1675.firebasestorage.app",
+  messagingSenderId: "1091620849392",
+  appId: "1:1091620849392:web:5feb74c720bdc79ed56435",
+  measurementId: "G-N0PCCCYRST"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
 const AddNews = () => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [authorName, setAuthorName] = useState('');
-  const [publishedAt, setPublishedAt] = useState('');
-  const [message, setMessage] = useState('');
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    authorName: '',
+    publishedAt: new Date().toISOString().split('T')[0],
+    tags: '',
+    sourceUrl: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    const newsData = {
+      title: formData.title,
+      content: formData.content,
+      author: {
+        name: formData.authorName
+      },
+      publishedAt: new Date(formData.publishedAt).toISOString(),
+      tags: formData.tags.split(',').map(tag => tag.trim()),
+      sourceUrl: formData.sourceUrl,
+      createdAt: new Date().toISOString()
+    };
 
     try {
-      const newsData = {
-        title,
-        content,
-        author: { name: authorName },
-        publishedAt: new Date(publishedAt),
-      };
+      // Option 1: Store via your API (recommended with API key)
+      const apiResponse = await fetch('http://localhost:3000/news', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'e7a7d3fd-9e9c-405e-95c9-71e793d2aa0f'
+        },
+        body: JSON.stringify(newsData)
+      });
 
-      const response = await axios.post('http://localhost:3000/news', newsData);
-      if (response.status === 201) {
-        setMessage('News added successfully!');
-        // Clear form
-        setTitle('');
-        setContent('');
-        setAuthorName('');
-        setPublishedAt('');
+      if (!apiResponse.ok) {
+        throw new Error('API request failed');
       }
-    } catch (error) {
-      console.error('Error adding news:', error);
-      setMessage('Failed to add news.');
+
+      // Option 2: Direct Firebase storage (as fallback)
+      const newsRef = ref(database, 'news');
+      const newNewsRef = push(newsRef);
+      await set(newNewsRef, newsData);
+
+      setSuccess('News published via API and stored in Firebase!');
+      resetForm();
+    } catch (err) {
+      setError(err.message || 'Failed to publish news');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      content: '',
+      authorName: '',
+      publishedAt: new Date().toISOString().split('T')[0],
+      tags: '',
+      sourceUrl: ''
+    });
+  };
+
+  const handleChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
   return (
-    <div>
-      <h2>Add Latest News</h2>
+    <div className="news-form">
+      <h2>Create News Article</h2>
+      {error && <div className="error">{error}</div>}
+      {success && <div className="success">{success}</div>}
+
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Title:</label><br />
+        <div className="form-group">
+          <label>Title*</label>
           <input
             type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
             required
           />
         </div>
-        <div>
-          <label>Content:</label><br />
-          <textarea
-            value={content}
-            onChange={e => setContent(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Author Name:</label><br />
+
+        <div className="form-group">
+          <label>Author Name*</label>
           <input
             type="text"
-            value={authorName}
-            onChange={e => setAuthorName(e.target.value)}
+            name="authorName"
+            value={formData.authorName}
+            onChange={handleChange}
             required
           />
         </div>
-        <div>
-          <label>Published At:</label><br />
+
+        <div className="form-group">
+          <label>Published Date*</label>
           <input
             type="date"
-            value={publishedAt}
-            onChange={e => setPublishedAt(e.target.value)}
+            name="publishedAt"
+            value={formData.publishedAt}
+            onChange={handleChange}
             required
           />
         </div>
-        <button type="submit">Add News</button>
+
+        <div className="form-group">
+          <label>Tags (comma separated)</label>
+          <input
+            type="text"
+            name="tags"
+            value={formData.tags}
+            onChange={handleChange}
+            placeholder="technology, business, sports"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Source URL</label>
+          <input
+            type="url"
+            name="sourceUrl"
+            value={formData.sourceUrl}
+            onChange={handleChange}
+            placeholder="https://example.com/news"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Content*</label>
+          <textarea
+            name="content"
+            value={formData.content}
+            onChange={handleChange}
+            rows={8}
+            required
+          />
+        </div>
+
+        <button type="submit" disabled={loading}>
+          {loading ? 'Publishing...' : 'Publish Article'}
+        </button>
       </form>
-      {message && <p>{message}</p>}
     </div>
   );
 };
